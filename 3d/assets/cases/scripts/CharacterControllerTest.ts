@@ -1,9 +1,7 @@
 import { _decorator, Component, Node, CharacterController, Vec2, Vec3, Input, EventKeyboard, 
-    KeyCode, clamp, input, PhysicsSystem, CharacterControllerContact, Quat, EventTouch, BoxCharacterController, ModelComponent, Color } from 'cc';
+    KeyCode, clamp, input, PhysicsSystem, CharacterControllerContact, Quat, EventTouch, ModelComponent, Color, 
+    geometry} from 'cc';
 const { ccclass, property, menu } = _decorator;
-const v_3 = new Vec3();
-const v3_0 = new Vec3();
-const v3_1 = new Vec3();
 const v2_0 = new Vec2();
 const rotation = new Quat();
 const scale = new Vec3(1);
@@ -97,7 +95,7 @@ export class CharacterControllerTest extends Component {
     }
 
     onControllerTriggerEnter(event: any) {
-        //console.log('cct onControllerTriggerEnter', event);
+        // console.log('cct onControllerTriggerEnter', event);
         const modelCom = event.characterController.node.getComponent(ModelComponent);
         if (modelCom) {
             modelCom.material.setProperty('mainColor', new Color(255, 0, 0, 99));
@@ -204,12 +202,47 @@ export class CharacterControllerTest extends Component {
             }
         }
 
+        // Prevent jumping over the height limit.
+        if (this.isFacingStepOver()) {
+            this._playerVelocity.y += this.gravityValue * deltaTime;
+            this._playerVelocity.x = 0;
+            this._playerVelocity.z = 1;
+        }
+
         Vec3.multiplyScalar(this._movement, this._playerVelocity, deltaTime);
         this._cct!.move(this._movement);
 
         if (this._grounded) {
             this._playerVelocity.y = 0;
         }
+    }
+
+    isFacingStepOver() {
+        // Ray start point is the bottom of the character.
+        const position = this.node.position;
+        let outRay = new geometry.Ray(position.x, position.y - 1, position.z + 0.5, 0, 0, -1);
+        PhysicsSystem.instance.raycastClosest(outRay, 0xffffffff, 0.2);
+
+        let hitForwardNode: Node | null = null;
+        // max distance should be 1, as the step width is 1. We want to check the edge situation.
+        if (PhysicsSystem.instance.raycastClosest(outRay, 0xffffffff, 1, true)) {
+            const raycastClosestResult = PhysicsSystem.instance.raycastClosestResult;
+            const collider = raycastClosestResult.collider;            
+            hitForwardNode = collider.node;
+        }
+
+        outRay = new geometry.Ray(position.x, position.y, position.z, 0, -1, 0);
+        if (PhysicsSystem.instance.raycastClosest(outRay, 0xffffffff, 10)) {
+            const raycastClosestResult = PhysicsSystem.instance.raycastClosestResult;
+            const collider = raycastClosestResult.collider;            
+            const hitGroundNode = collider.node;
+
+            if (hitForwardNode) {
+                return (hitForwardNode.worldPosition.y - hitGroundNode.worldPosition.y) > this._cct!.stepOffset;
+            }
+        }
+
+        return false;
     }
 }
 
