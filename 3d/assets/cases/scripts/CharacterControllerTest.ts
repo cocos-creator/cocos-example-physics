@@ -202,7 +202,7 @@ export class CharacterControllerTest extends Component {
             }
         }
 
-        // 
+        // Prevent jumping over the height limit.
         if (this.isFacingStepOver()) {
             this._playerVelocity.y += this.gravityValue * deltaTime;
             this._playerVelocity.x = 0;
