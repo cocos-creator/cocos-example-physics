@@ -1,12 +1,7 @@
-import { Ray } from '@cocos/cannon';
 import { _decorator, Component, Node, CharacterController, Vec2, Vec3, Input, EventKeyboard, 
-    KeyCode, clamp, input, PhysicsSystem, CharacterControllerContact, Quat, EventTouch, BoxCharacterController, ModelComponent, Color, 
-    geometry,
-    math} from 'cc';
+    KeyCode, clamp, input, PhysicsSystem, CharacterControllerContact, Quat, EventTouch, ModelComponent, Color, 
+    geometry} from 'cc';
 const { ccclass, property, menu } = _decorator;
-const v_3 = new Vec3();
-const v3_0 = new Vec3();
-const v3_1 = new Vec3();
 const v2_0 = new Vec2();
 const rotation = new Quat();
 const scale = new Vec3(1);
@@ -77,7 +72,6 @@ export class CharacterControllerTest extends Component {
         this._hitPoint.setWorldRotation(rotation);
         
         const body = hit.collider.attachedRigidBody;
-        hit.collider.node.position.y
         // no rigidbody
         if (body == null || body.isKinematic) {
             return;
@@ -101,7 +95,7 @@ export class CharacterControllerTest extends Component {
     }
 
     onControllerTriggerEnter(event: any) {
-        console.log('cct onControllerTriggerEnter', event);
+        // console.log('cct onControllerTriggerEnter', event);
         const modelCom = event.characterController.node.getComponent(ModelComponent);
         if (modelCom) {
             modelCom.material.setProperty('mainColor', new Color(255, 0, 0, 99));
@@ -208,7 +202,8 @@ export class CharacterControllerTest extends Component {
             }
         }
 
-        if (this.isAtStepOverEdge()) {
+        // 
+        if (this.isFacingStepOver()) {
             this._playerVelocity.y += this.gravityValue * deltaTime;
             this._playerVelocity.x = 0;
             this._playerVelocity.z = 1;
@@ -222,7 +217,8 @@ export class CharacterControllerTest extends Component {
         }
     }
 
-    isAtStepOverEdge() {
+    isFacingStepOver() {
+        // Ray start point is the bottom of the character.
         const position = this.node.position;
         let outRay = new geometry.Ray(position.x, position.y - 1, position.z + 0.5, 0, 0, -1);
         PhysicsSystem.instance.raycastClosest(outRay, 0xffffffff, 0.2);
